@@ -32,8 +32,10 @@
         uuid: undefined,
         allData: undefined,
         pigUnoptimizedData: undefined,
+        dotUnoptimized: undefined,
         svgUnoptimized: undefined,
         pigOptimizedData: undefined,
+        dotOptimized: undefined,
         svgOptimized: undefined,
         runStatsData: undefined,
         sampleOutputsData: {}
@@ -89,7 +91,13 @@
             GraphModel.options.allData = json;
             GraphModel.options.runStatsData = json.status;
             GraphModel.options.pigOptimizedData = json.optimized.plan;
-            GraphModel.options.svgOptimized = json.optimized.svg;
+            if (json.optimized.hasOwnProperty('dot') && json.optimized.dot) {
+                GraphModel.options.dotOptimized = json.optimized.dot;
+                GraphModel.options.svgOptimized = GraphModel.convertDot(json.optimized.dot, "svg");
+            }
+            else {
+                GraphModel.options.svgOptimized = json.optimized.svg;
+            }
             $(GraphModel.options.jobInfoSel).html(json.jobName + ' (' + json.userName + ')');
             $(document).trigger('loadGraphModel.tossboss-graph-model');
             GraphModel.getRunStats()
@@ -101,8 +109,22 @@
             url:  './job/'+uuid+'?unoptimized=1'
         }).done(function(json) {
             GraphModel.options.pigUnoptimizedData = json.unoptimized.plan;
-            GraphModel.options.svgUnoptimized = json.unoptimized.svg;
+            if (json.unoptimized.hasOwnProperty('dot') && json.optimized.dot) {
+                GraphModel.options.dotUnoptimized = json.unoptimized.dot;
+                GraphModel.options.svgUnoptimized = GraphModel.convertDot(json.unoptimized.dot, "svg");
+            }
+            else {
+                GraphModel.options.svgUnoptimized = json.unoptimized.svg;
+            }
         });
+    },
+    /**
+     * Convert DOT notation to specified format.
+     *
+     * @return {String} Returns converted string
+     */
+    convertDot: function(dot, format) {
+        return Viz(dot, format);
     },
     /**
      * Get the run stats data for the Graph.
