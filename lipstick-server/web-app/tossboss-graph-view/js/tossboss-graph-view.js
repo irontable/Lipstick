@@ -364,7 +364,6 @@
      * Add any additional data to graph SVG.
      */
     addDataToGraph: function() {
-        var s3StorageFunctions = ['PigStorage','AegisthusBagLoader','AegisthusMapLoader','PartitionedLoader','PartitionedStorer'];
         var dumpStorageFunctions = ['TFileStorage','InnerStorage'];
         // Get Pig data.
         var pigData = GraphModel.getPigData();
@@ -400,10 +399,7 @@
             if (startObj.predecessors.length == 0) {
                 d3.select(element).classed(startScopeId+'-in',true);
                 if (startObj.hasOwnProperty('storageLocation')) {
-                    var storageLocation = startObj.storageLocation.slice(-40);
-                    if (_.contains(s3StorageFunctions, startObj.storageFunction)) {
-                        storageLocation = storageLocation.split('/').reverse()[0].slice(-40);
-                    }
+                    var storageLocation = startObj.storageLocation.split('/').reverse()[0].slice(-40);
                     $(element).attr('data-storagelocation-in',storageLocation);
                 }
             }
@@ -411,10 +407,7 @@
             if (endObj.successors.length == 0) {
                 d3.select(element).classed(startScopeId+'-out',true);
                 if (endObj.hasOwnProperty('storageLocation')) {
-                    var storageLocation = endObj.storageLocation.slice(-40);
-                    if (_.contains(s3StorageFunctions, endObj.storageFunction)) {
-                        storageLocation = storageLocation.split('/').reverse()[0].slice(-40);
-                    }
+                    var storageLocation = endObj.storageLocation.split('/').reverse()[0].slice(-40);
                     $(element).attr('data-storagelocation-out',storageLocation);
                     if (_.contains(dumpStorageFunctions, endObj.storageFunction)) {
                         d3.select(element).classed('intermediate',true);
