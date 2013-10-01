@@ -46,18 +46,25 @@ import com.netflix.lipstick.pigtolipstick.P2LClient;
 public class LipstickPPNL implements PigProgressNotificationListener {
     private static final Log LOG = LogFactory.getLog(LipstickPPNL.class);
 
-    protected static final String LIPSTICK_UUID_PROP = "lipstick.uuid";
+    protected static final String LIPSTICK_UUID_PROP_NAME = "lipstick.uuid.prop.name";
+    protected static final String LIPSTICK_UUID_PROP_DEFAULT = "lipstick.uuid";
+
     protected static final String LIPSTICK_URL_PROP = "lipstick.server.url";
 
     protected LipstickPigServer ps;
     protected PigContext context;
     protected List<P2LClient> clients = Lists.newLinkedList();
+    protected List<PPNLErrorHandler> errorHandlers = Lists.newLinkedList();
 
     /**
      * Initialize a new LipstickPPNL object.
      */
     public LipstickPPNL() {
         LOG.info("--- Init TBPPNL ---");
+    }
+
+    public void addErrorHandler(PPNLErrorHandler errHandler) {
+        errorHandlers.add(errHandler);
     }
 
     /**
@@ -110,7 +117,14 @@ public class LipstickPPNL implements PigProgressNotificationListener {
             initClients();
 
             if (clientIsActive()) {
-                String uuid = UUID.randomUUID().toString();
+                Properties props = context.getProperties();
+                String uuidPropName = props.getProperty(LIPSTICK_UUID_PROP_NAME, LIPSTICK_UUID_PROP_DEFAULT);
+                String uuid = props.getProperty(uuidPropName);
+                if ((uuid == null) || uuid.isEmpty()) {
+                    uuid = UUID.randomUUID().toString();
+                    props.put(uuidPropName, uuid);
+                }
+                LOG.info("UUID: " + uuid);
                 LOG.info(clients);
                 for (P2LClient client : clients) {
                     client.setPlanGenerators(unoptimizedPlanGenerator, optimizedPlanGenerator);
@@ -118,11 +132,13 @@ public class LipstickPPNL implements PigProgressNotificationListener {
                     client.setPigContext(context);
                     client.setPlanId(uuid);
                 }
-                Properties props = context.getProperties();
-                props.put(LIPSTICK_UUID_PROP, uuid);
+
             }
         } catch (Exception e) {
             LOG.error("Caught unexpected exception", e);
+            for (PPNLErrorHandler errHandler : errorHandlers) {
+                errHandler.handlePlanGeneratorsError(e);
+            }
         }
     }
 
@@ -144,6 +160,9 @@ public class LipstickPPNL implements PigProgressNotificationListener {
             }
         } catch (Exception e) {
             LOG.error("Caught unexpected exception", e);
+            for (PPNLErrorHandler errHandler : errorHandlers) {
+                errHandler.handleInitialPlanNotificationError(e);
+            }
         }
     }
 
@@ -183,6 +202,9 @@ public class LipstickPPNL implements PigProgressNotificationListener {
             }
         } catch (Exception e) {
             LOG.error("Caught unexpected exception", e);
+            for (PPNLErrorHandler errHandler : errorHandlers) {
+                errHandler.handleJobStartedNotificationError(e);
+            }
         }
     }
 
@@ -203,6 +225,9 @@ public class LipstickPPNL implements PigProgressNotificationListener {
             }
         } catch (Exception e) {
             LOG.error("Caught unexpected exception", e);
+            for (PPNLErrorHandler errHandler : errorHandlers) {
+                errHandler.handleJobFinishedNotificationError(e);
+            }
         }
     }
 
@@ -223,6 +248,9 @@ public class LipstickPPNL implements PigProgressNotificationListener {
             }
         } catch (Exception e) {
             LOG.error("Caught unexpected exception", e);
+            for (PPNLErrorHandler errHandler : errorHandlers) {
+                errHandler.handleJobFailedNotificationError(e);
+            }
         }
     }
 
@@ -253,6 +281,9 @@ public class LipstickPPNL implements PigProgressNotificationListener {
             }
         } catch (Exception e) {
             LOG.error("Caught unexpected exception", e);
+            for (PPNLErrorHandler errHandler : errorHandlers) {
+                errHandler.handleProgressUpdatedNotificationError(e);
+            }
         }
     }
 
@@ -272,6 +303,9 @@ public class LipstickPPNL implements PigProgressNotificationListener {
             }
         } catch (Exception e) {
             LOG.error("Caught unexpected exception", e);
+            for (PPNLErrorHandler errHandler : errorHandlers) {
+                errHandler.handleLaunchCompletedNotificationError(e);
+            }
         }
     }
 
